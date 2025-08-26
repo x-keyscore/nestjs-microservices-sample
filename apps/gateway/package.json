@@ -1,0 +1,12 @@
+{
+	"name": "gateway-app",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"test": "jest",
+		"test:functional": "docker compose -p development exec gateway npm run _docker:test:functional --workspace=gateway-app",
+		"_docker:test:functional": "jest --config ./test/functional.jest.config.mjs",
+		"test:coverage": "jest --coverage",
+		"lint": "eslint \"{src,test}/**/*.ts\" --fix"
+	}
+}
