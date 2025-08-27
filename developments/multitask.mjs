@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 
 const config = {
 	rootPath: "./",
 	logsPath: "developments/logs",
-	processFile: "developments/processes.json",
 	apps: [
 		{
 			name: "gateway",
-			exec: "nest",
+			exec: "nest start gateway --watch",
 			args: ["start", "gateway", "--watch"],
 			env: {
 				HTTP_GATEWAY_PORT: "3000",
@@ -21,8 +21,60 @@ const config = {
 	]
 };
 
+/*
+const basePath = path.resolve(
+	config.rootPath
+);
+const logFilePath = path.join(basePath, `developments/logs/test.log`);
+const logFile = fs.openSync(logFilePath, "a");
+const subprocess = spawn(
+	"cmd.exe",
+	["/c", "node", "-e", "console.log('hello');"],
+	{
+		stdio: ["ignore", logFile, logFile],
+		cwd: "./",
+		//detached: true,
+		//windowsHide: true
+	
+	}
+);
+*/
+const DUMP_PATH = path.join(os.homedir(), ".multitask");
+if (!fs.existsSync(DUMP_PATH)) {
+	fs.mkdirSync(DUMP_PATH);
+}
+const DUMP_PROCESSES_FILE = path.join(DUMP_PATH, "processes.json");
+if (!fs.existsSync(DUMP_PROCESSES_FILE)) {
+	fs.writeFileSync(DUMP_PROCESSES_FILE, "{}", "utf-8");
+}
+
+function readJsonFile(filePath) {
+	try {
+		return (JSON.parse(fs.readFileSync(filePath, "utf-8")));
+	} catch (err) {
+		throw new Error(
+			`Failed to read JSON file '${filePath}': ${err.message}`
+		);
+	}
+}
+
+function writeJsonFile(filePath, data) {
+	try {
+		fs.writeFileSync(filePath, JSON.stringify(data, null, 4));
+	} catch (err) {
+		throw new Error(
+			`Failed to write JSON file '${filePath}': ${err.message}`
+		);
+	}
+}
+
 class ProcessManager {
-	constructor(config) {
+	/**
+	 * @param {Object} config 
+	 * @param {Object.<string, number>} processes 
+	 */
+	constructor(processes, config) {
+		this.processes = processes;
 		this.config = config;
 
 		this.basePath = path.resolve(
@@ -34,59 +86,23 @@ class ProcessManager {
 			config.logsPath
 		);
 
-		this.processFile = path.join(
-			this.basePath,
-			config.processFile
-		);
-
 		if (!fs.existsSync(this.logsPath)) {
 			fs.mkdirSync(this.logsPath);
 		}
 	}
 
-	#readProcessFile() {
-		try {
-			return (JSON.parse(fs.readFileSync(this.processFile, "utf-8")));
-		} catch (err) {
-			throw new Error(
-				`Failed to read process file '${this.processFile}': ${err.message}`
-			);
-		}
-	}
-
-	#writeProcessFile(data) {
-		try {
-			fs.writeFileSync(this.processFile, JSON.stringify(data, null, 2));
-		} catch (err) {
-			throw new Error(
-				`Failed to write process file '${this.processFile}': ${err.message}`
-			);
-		}
-	}
-
 	addProcess(name, pid) {
-		const processes = this.#readProcessFile();
-		processes[name] = pid;
-		this.#writeProcessFile(processes);
+		this.processes[name] = pid;
 	}
 
 	delProcess(name) {
-		const processes = this.#readProcessFile();
-		if (processes[name]) {
-			delete processes[name];
-			this.#writeProcessFile(processes);
+		if (this.processes[name]) {
+			delete this.processes[name];
 		}
 	}
 
 	getProcess(name) {
-		const processes = this.#readProcessFile();
-		if (name) return (processes[name]);
-		return (null);
-	}
-
-	getAllProcesses() {
-		const processes = this.#readProcessFile();
-		return (processes);
+		return (this.processes[name]);
 	}
 
 	hasProcess(name) {
@@ -94,84 +110,42 @@ class ProcessManager {
 	}
 
 	startProcess(task) {
-		const logFile = path.join(this.logsPath, `${task.name}.log`);
-		const logStream = fs.createWriteStream(logFile, { flags: "a" });
+		const logFilePath = path.join(this.logsPath, `${task.name}.log`);
+		const logFile = fs.openSync(logFilePath, "a");
 
-		const childProcess = spawn(task.exec, task.args, {
-			stdio: ["pipe", "pipe", "pipe"],
-			detached: true,
-			shell: true,
-			cwd: this.basePath,
-			env: {
-				...process.env,
-				...task.env
+		const subprocess = spawn(
+			"cmd.exe",
+			["/c", "node", "-e", "console.log('hello');"],
+			{
+				stdio: ["ignore", logFile, logFile],
+				cwd: this.basePath,
+				detached: true,
+			
 			}
-		});
+		);
 
-		this.addProcess(task.name, childProcess.pid);
-
-		childProcess.stdout.on("data", (data) => {
-			const line = `[${task.name}] ${data}`;
-
-			process.stdout.write(line);
-			logStream.write(line);
-		});
-
-		childProcess.stderr.on("data", (data) => {
-			const line = `[${task.name} ERROR] ${data}`;
-
-			process.stderr.write(line);
-			logStream.write(line);
-		});
-
-		childProcess.on("error", (err) => {
-			const message = `[${task.name} FAILLED] ${err.message}\n`;
-
-			process.stderr.write(message);
-			logStream.write(message, () => {
-				logStream.end();
-			});
-		});
-
-		childProcess.on("close", (code, signal) => {
-			const message = `[${task.name} STOPPED] Exited with code '${code}' (${signal}) \n`;
-
-			process.stdout.write(message);
-			logStream.write(message, () => {
-				logStream.end();
-			});
-			this.delProcess(task.name);
-		});
-
-		childProcess.unref();
+		this.addProcess(task.name, subprocess.pid);
+		//subprocess.unref();
 	}
 
 	stopProcess(name) {
 		const pid = processManager.getProcess(name);
-		if (!pid) {
-			console.error(`Successful to stop process '${name}' (${pid})`);
-			return;
-		}
+		if (!pid) throw new Error("Invalid name");
 
 		try {
-			process.kill(pid, "SIGTERM");
-			console.info(`Process '${name}' (${pid}) stopped`);
+			process.kill(pid);
 			this.delProcess(name);
+			console.log(`Successful to stop process '${name}' (${pid})`);
 		} catch (err) {
-			console.error(`Failed to stop process '${name}' (${pid}) :`, err.message);
-		}
-	}
-
-	stopAllProcesses() {
-		const processes = this.getAllProcesses();
-
-		for (const name in processes) {
-			stopProcess(name);
+			console.error(`Failed to stop process '${name}' (${pid}) :\n`, err.message);
 		}
 	}
 }
 
-const processManager = new ProcessManager(config);
+const processManager = new ProcessManager(
+	readJsonFile(DUMP_PROCESSES_FILE),
+	config
+);
 
 const [, , cmd, arg] = process.argv;
 
@@ -181,21 +155,27 @@ switch (cmd) {
 			processManager.startProcess(app);
 		}
 		break;
-
 	case "stop":
-		if (!arg) processManager.stopAllProcesses();
+		if (!arg) {
+			for (const name in processManager.processes) {
+				processManager.stopProcess(name);
+			}
+			break;
+		}
 		processManager.stopProcess(arg);
 		break;
 
-	case "stop":
-		if (!arg) processManager.stopAllProcesses();
+	case "list":
+		if (!arg) {
+			processManager.stopAllProcesses();
+			break;
+		}
 		processManager.stopProcess(arg);
 		break;
 
 	case "logs":
 		if (!arg) {
-			console.error("❌ Usage: node multitask.js logs <service>");
-			process.exit(1);
+
 		}
 		streamLogs(arg);
 		break;
@@ -208,3 +188,17 @@ switch (cmd) {
 			"node multitask.js logs <name>      # Affiche les logs en live d'un service\n"
 		);
 }
+
+process.on("exit", () => {
+	writeJsonFile(DUMP_PROCESSES_FILE, processManager.processes);
+});
+
+process.on("SIGINT", () => {
+	writeJsonFile(DUMP_PROCESSES_FILE, processManager.processes);
+	process.exit();
+});
+
+process.on("SIGTERM", () => {
+	writeJsonFile(DUMP_PROCESSES_FILE, processManager.processes);
+	process.exit();
+});

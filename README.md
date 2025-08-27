@@ -3,6 +3,7 @@
 ## Setup
 
 ```markdown
+$ npm install -g @nestjs/cli
 $ npm install
 ```
 
