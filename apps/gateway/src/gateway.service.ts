@@ -1,3 +1,4 @@
+import type { SignupRequestContract } from "@app/common/auth";
 import { Injectable, Inject } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { lastValueFrom } from "rxjs";
@@ -6,9 +7,7 @@ import { lastValueFrom } from "rxjs";
 export class GatewayService {
 	constructor(@Inject("GATEWAY") private readonly client: ClientProxy) {}
 
-	async signup(): Promise<string> {
-		const response = await lastValueFrom(this.client.send("AUTH.SIGNUP", {}));
-
-		return (response);
+	async authSignup(body: SignupRequestContract): Promise<string> {
+		return await lastValueFrom(this.client.send("AUTH.SIGNUP", body));
 	}
 }

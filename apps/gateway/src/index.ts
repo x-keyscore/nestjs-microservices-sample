@@ -10,7 +10,7 @@ async function bootstrap() {
 		new FastifyAdapter()
 	);
 
-	await app.listen(env.HTTP_GATEWAY_PORT);
+	await app.listen(env.HTTP_GATEWAY_PORT as any);
 }
 
 bootstrap().catch((err) => {

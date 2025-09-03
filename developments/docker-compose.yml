@@ -8,13 +8,13 @@ volumes:
 services:
   nats:
     image: nats
-    # -D : debug | -V : verbose | -c <path>.conf : config
+    # -D = debug | -V = verbose | -c <path>.conf = config
     command: ["-DV", "-c", "/etc/nats/nats.conf"]
     ports:
       - "4222:4222"
       - "8222:8222"
     volumes:
-      # :ro : read-only
+      # :ro = read-only
       - ./nats.conf:/etc/nats/nats.conf:ro
     networks:
       - nats
@@ -26,6 +26,8 @@ services:
       MYSQL_PASSWORD: pass
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: app
+    ports:
+      - "3306:3306"
     volumes:
       - mysql:/var/lib/mysql
     networks:

@@ -8,5 +8,5 @@ import { CommonService } from "./common.service";
 export class CommonModule {}
 
 export function foo(name: string): string {
-  return `Hello ${name}, from shared lib!`;
+	return `Hello ${name}, from shared lib!`;
 }

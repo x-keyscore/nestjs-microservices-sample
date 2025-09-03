@@ -6,15 +6,13 @@ import { env } from "./config/env";
 
 @Module({
 	imports: [
-		ClientsModule.register([
-			{
-				name: "GATEWAY",
-				transport: Transport.NATS,
-				options: {
-					servers: [env.NATS_TRANSPORT_URL]
-				}
+		ClientsModule.register([{
+			name: "GATEWAY",
+			transport: Transport.NATS,
+			options: {
+				servers: [env.NATS_TRANSPORT_URL as any]
 			}
-		])
+		}])
 	],
 	controllers: [GatewayController],
 	providers: [GatewayService]

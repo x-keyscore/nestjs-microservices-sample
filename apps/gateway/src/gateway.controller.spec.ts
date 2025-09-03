@@ -1,22 +1,35 @@
-import { Test, TestingModule } from "@nestjs/testing";
+import { Test } from "@nestjs/testing";
 import { GatewayController } from "./gateway.controller";
 import { GatewayService } from "./gateway.service";
 
 describe("GatewayController", () => {
-	let gatewayController: GatewayController;
+	let gatewayService: GatewayService;
 
 	beforeEach(async () => {
-		const app: TestingModule = await Test.createTestingModule({
+		const mockResponses = {
+			signup: jest.fn()
+		};
+
+		const app = await Test.createTestingModule({
 			controllers: [GatewayController],
-			providers: [GatewayService]
+			providers: [{
+				provide: GatewayService,
+				useValue: mockResponses
+			}]
 		}).compile();
 
-		gatewayController = app.get<GatewayController>(GatewayController);
+		gatewayService = app.get<GatewayService>(GatewayService);
 	});
 
-	describe("root", () => {
-		it("should return 'OK'", () => {
-			expect(gatewayController.signup()).toBe("OK");
+	describe("auth/signup", () => {
+		it("should call the service with the request and return a response", async () => {
+			const mockRequest = {
+				name: "Bob",
+				email: "bob@domain.com",
+				password: "123"
+			};
+
+			expect(gatewayService.authSignup).toHaveBeenCalledWith(mockRequest);
 		});
 	});
 });

@@ -1,18 +1,17 @@
-import { Controller, Post, HttpCode, HttpStatus } from "@nestjs/common";
+import { Controller, Post, Body, BadRequestException } from "@nestjs/common";
 import { GatewayService } from "./gateway.service";
-import { foo } from "@app/common";
+import { signupRequestContract } from "@app/common/auth";
 
 @Controller()
 export class GatewayController {
 	constructor(private readonly gatewayService: GatewayService) {}
 
-	@Post("/")
-	@HttpCode(HttpStatus.CREATED)
-	async signup() {
-		foo("test");
+	@Post("auth/signup")
+	async authSignup(@Body() body: unknown) {
+		if (!signupRequestContract.validate(body)) {
+			throw new BadRequestException();
+		}
 
-		const response = await this.gatewayService.signup();
-		
-		return (response);
+		return (await this.gatewayService.authSignup(body));
 	}
 }

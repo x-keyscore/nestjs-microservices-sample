@@ -3,6 +3,15 @@
   "collection": "@nestjs/schematics",
   "monorepo": true,
   "projects": {
+    "auth": {
+      "type": "application",
+      "root": "apps/services/auth",
+      "sourceRoot": "apps/services/auth/src",
+      "entryFile": "index",
+      "compilerOptions": {
+        "tsConfigPath": "apps/services/auth/tsconfig.app.json"
+      }
+    },
     "common": {
       "type": "library",
       "root": "libs/common",
@@ -21,13 +30,13 @@
         "tsConfigPath": "apps/gateway/tsconfig.app.json"
       }
     },
-    "auth-service": {
+    "services/user": {
       "type": "application",
-      "root": "apps/services/auth-service",
-      "sourceRoot": "apps/services/auth-service/src",
-      "entryFile": "index",
+      "root": "apps/services/user",
+      "entryFile": "main",
+      "sourceRoot": "apps/services/user/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/services/auth-service/tsconfig.app.json"
+        "tsConfigPath": "apps/services/user/tsconfig.app.json"
       }
     }
   },

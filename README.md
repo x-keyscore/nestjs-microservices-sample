@@ -1,32 +1,28 @@
-## CDA
+# CDA
 
-## Setup
+## Development
+
+### Setup
 
 ```markdown
 $ npm install -g @nestjs/cli
+$ npm install -g concurrently
 $ npm install
+
+$ npm run docker:build
 ```
 
-## Start
+### Start 
 
 ```markdown
-# Development
+# Docker
+$ npm run docker:up
+
+# Nest
 $ npm run start
-
-# Debugging
-$ npm run start:debug
-
-# Production
-$ npm run start:production
 ```
 
-## Build
-
-```markdown
-$ npm run build
-```
-
-## Test
+### Test
 
 ```markdown
 # Unit
@@ -34,7 +30,12 @@ $ npm run test
 
 # Functional
 $ npm run test:functional
+```
 
-# Coverage
-$ npm run test:coverage
+## Production
+
+### Build
+
+```markdown
+$ npm run build
 ```
